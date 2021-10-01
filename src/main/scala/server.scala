@@ -95,9 +95,28 @@ object Server extends App {
 
   case class ImpressionMatch(id: Option[String], banner: Option[List[Banner]])
 
-  val bannerz = activeCampaigns.banners
-  val biddd = bid.imp.get
-  val impress = biddd.filter(yy => activeCampaigns.bid >= (yy.bidFloor.get))
+  val banners = activeCampaigns.banners
+
+  def matchBidfloor(bidRequset: BidRequest, campaign: Campaign) : List[Impression] = {
+    val impressionList = bidRequset.imp.get
+    return for(impression <- impressionList if campaign.bid >= impression.bidFloor.get)yield impression
+  }
+
+  println(matchBidfloor(bid,activeCampaigns))
+
+  def matchCountry(bidRequset: BidRequest, campaign: Campaign): Boolean = {
+    bidRequset match {
+      case BidRequest(_, _, _, _, device)
+          if (device.isDefined && device.get.geo.get.country.get == campaign.country) => {
+        true
+      }
+      case BidRequest(_, _, _, site, _)
+          if (site.isDefined && site.get.geo.get.country.get == campaign.country) => {
+        true
+      }
+      case _ => false
+    }
+  }
 
   def heightMatch(
       imp: Impression,
@@ -133,7 +152,7 @@ object Server extends App {
     }
   }
 
-  def matcher(
+  def matchBannerSize(
       imp: Impression,
       banner: List[Banner]
   ): Option[ImpressionMatch] = {
@@ -171,11 +190,13 @@ object Server extends App {
       case _ => None
     }
   }
-val impwithhw =
-    impress.map(x => matcher(x, bannerz)).filter(impp => impp.isDefined)
+  val impwithhw =
+    matchBidfloor(bid,activeCampaigns).map(x => matchBannerSize(x, banners)).filter(impp => impp.isDefined)
 
   println(impwithhw)
 
   println(activeCampaigns.bid)
+
+  println(matchCountry(bid, activeCampaigns))
 
 }
