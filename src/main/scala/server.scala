@@ -7,7 +7,7 @@ object Server extends App {
       banners: List[Banner],
       bid: Double
   )
-  case class Targeting(targetedSiteIds: Seq[String])
+  case class Targeting(targetedSiteIds: Set[String], domain: String)
   case class Banner(id: Int, src: String, width: Int, height: Int)
   //
   //
@@ -16,7 +16,8 @@ object Server extends App {
       id = 1,
       country = "LT",
       targeting = Targeting(
-        targetedSiteIds = Seq("0006a522ce0f4bbbbaa6b3c38cafaa0f") // Use collection of your choice
+        targetedSiteIds = Set("0006a522ce0f4bbbbaa6b3c38cafaa0f"), // changed collection from Seq to Immutable set. Added domain field.
+        domain = "fake.tld"
       ),
       banners = List(
         Banner(
@@ -97,12 +98,16 @@ object Server extends App {
 
   val banners = activeCampaigns.banners
 
-  def matchBidfloor(bidRequset: BidRequest, campaign: Campaign) : List[Impression] = {
+  def matchBidfloor(
+      bidRequset: BidRequest,
+      campaign: Campaign
+  ): List[Impression] = {
     val impressionList = bidRequset.imp.get
-    return for(impression <- impressionList if campaign.bid >= impression.bidFloor.get)yield impression
+    return for (impression <- impressionList
+                if campaign.bid >= impression.bidFloor.get) yield impression
   }
 
-  println(matchBidfloor(bid,activeCampaigns))
+  println(matchBidfloor(bid, activeCampaigns))
 
   def matchCountry(bidRequset: BidRequest, campaign: Campaign): Boolean = {
     bidRequset match {
@@ -191,12 +196,19 @@ object Server extends App {
     }
   }
   val impwithhw =
-    matchBidfloor(bid,activeCampaigns).map(x => matchBannerSize(x, banners)).filter(impp => impp.isDefined)
+    matchBidfloor(bid, activeCampaigns)
+      .map(x => matchBannerSize(x, banners))
+      .filter(impp => impp.isDefined)
 
   println(impwithhw)
 
   println(activeCampaigns.bid)
 
   println(matchCountry(bid, activeCampaigns))
+
+  println(
+    activeCampaigns.targeting.targetedSiteIds
+      .contains("0006a522ce0f4bbbbaa6b3c38cafaa0f")
+  )
 
 }
