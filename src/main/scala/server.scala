@@ -1,3 +1,6 @@
+import scala.util.Random
+import java.util.UUID.randomUUID
+
 object Server extends App {
   //Campaign protocol stores information about the advertising campaign
   case class Campaign(
@@ -94,27 +97,32 @@ object Server extends App {
     )
   )
 
-  case class ImpressionMatch(id: Option[String], banner: Option[List[Banner]])
+  case class BidResponse(
+      id: String,
+      bidRequestId: String,
+      price: Double,
+      adid: Option[String],
+      banner: Option[Banner]
+  )
 
-  val banners = activeCampaigns.banners
-
-  def matchSiteId(site: Site, targeting: Targeting) : Boolean ={
-   site match {
-     case Site(id,_) if (targeting.targetedSiteIds.contains(site.id)) => true
-     case Site(_,domain) if (targeting.domain == site.domain) => true
-     case _ => false
-   }
-  } 
+  def matchSiteId(site: Site, targeting: Targeting): Boolean = {
+    site match {
+      case Site(id, _) if (targeting.targetedSiteIds.contains(site.id)) => true
+      case Site(_, domain) if (targeting.domain == site.domain)         => true
+      case _                                                            => false
+    }
+  }
 
   println(matchSiteId(bid.site, activeCampaigns.targeting))
 
-  def matchBidfloor(bidRequst: BidRequest, campaign: Campaign): List[Impression] = {
+  def matchBidfloor(
+      bidRequst: BidRequest,
+      campaign: Campaign
+  ): List[Impression] = {
     val impressionList = bidRequst.imp.get
     return for (impression <- impressionList
                 if campaign.bid >= impression.bidFloor.get) yield impression
   }
-
-  println(matchBidfloor(bid, activeCampaigns))
 
   def matchCountry(bidRequst: BidRequest, campaign: Campaign): Boolean = {
     bidRequst match {
@@ -130,35 +138,56 @@ object Server extends App {
     }
   }
 
-  def heightMatch(imp: Impression,banner: List[Banner]): Option[ImpressionMatch] = {
+  case class ImpressionMatch(id: String, banner: Banner, price: Double)
+
+  def heightMatch(
+      imp: Impression,
+      banner: List[Banner]
+  ): Option[ImpressionMatch] = {
+    val random = new Random
     imp match {
       case Impression(_, _, _, _, _, _, h, _)
-          if (imp.h.isDefined && banner.exists(bn => imp.h.getOrElse(0) == bn.height)) => {
+          if (imp.h.isDefined && banner.exists(bn =>
+            imp.h.getOrElse(0) == bn.height
+          )) => {
         val validBanners = banner.filter(bn => imp.h.getOrElse(0) == bn.height)
-        Option(ImpressionMatch(Option(bid.id), Option(validBanners)))
+        val randomImpression = validBanners(random.nextInt(validBanners.length))
+        Option(ImpressionMatch(bid.id, randomImpression, imp.bidFloor.get))
       }
 
       case Impression(_, _, _, _, hmin, _, _, _)
-          if (imp.hmin.isDefined && banner.exists(bn => imp.hmin.getOrElse(0) == bn.height)) => {
+          if (imp.hmin.isDefined && banner.exists(bn =>
+            imp.hmin.getOrElse(0) == bn.height
+          )) => {
         val validBanners =
           banner.filter(bn => imp.hmin.getOrElse(0) == bn.height)
-        Option(ImpressionMatch(Option(bid.id), Option(validBanners)))
+
+        val randomImpression = validBanners(random.nextInt(validBanners.length))
+        Option(ImpressionMatch(bid.id, randomImpression, imp.bidFloor.get))
       }
 
       case Impression(_, _, _, _, _, hmax, _, _)
-          if (imp.hmax.isDefined && banner.exists(bn => imp.hmax.getOrElse(0) == bn.height)) => {
+          if (imp.hmax.isDefined && banner.exists(bn =>
+            imp.hmax.getOrElse(0) == bn.height
+          )) => {
         val validBanners =
           banner.filter(bn => imp.hmax.getOrElse(0) == bn.height)
-        Option(ImpressionMatch(Option(bid.id), Option(validBanners)))
+        val randomImpression = validBanners(random.nextInt(validBanners.length))
+        Option(ImpressionMatch(bid.id, randomImpression, imp.bidFloor.get))
       }
       case _ => None
     }
   }
 
-  def matchBannerSize(imp: Impression, banner: List[Banner]): Option[ImpressionMatch] = {
+  def matchBannerSize(
+      imp: Impression,
+      banner: List[Banner]
+  ): Option[ImpressionMatch] = {
     imp match {
       case Impression(_, _, _, w, _, _, _, _)
-          if (imp.w.isDefined && banner.exists(bn => imp.w.getOrElse(0) == bn.width)) => {
+          if (imp.w.isDefined && banner.exists(bn =>
+            imp.w.getOrElse(0) == bn.width
+          )) => {
         val validBanners_w =
           banner.filter(bn => imp.w.getOrElse(0) == bn.width)
         println("hapa width")
@@ -166,7 +195,9 @@ object Server extends App {
 
       }
       case Impression(_, wmin, _, _, _, _, _, _)
-          if (imp.wmin.isDefined && banner.exists(bn => imp.wmin.getOrElse(0) == bn.width)) => {
+          if (imp.wmin.isDefined && banner.exists(bn =>
+            imp.wmin.getOrElse(0) == bn.width
+          )) => {
         val validBanners_wmin =
           banner.filter(bn => imp.wmin.getOrElse(0) == bn.width)
         println("hapa wmin")
@@ -174,7 +205,9 @@ object Server extends App {
 
       }
       case Impression(_, _, wmax, _, _, _, _, _)
-          if (imp.wmax.isDefined && banner.exists(bn => imp.wmax.getOrElse(0) == bn.width)) => {
+          if (imp.wmax.isDefined && banner.exists(bn =>
+            imp.wmax.getOrElse(0) == bn.width
+          )) => {
         val validBanners_wmax =
           banner.filter(bn => imp.wmax.getOrElse(0) == bn.width)
         println("hapa wmax")
@@ -184,11 +217,15 @@ object Server extends App {
       case _ => None
     }
   }
+
+  //tests Mbwakni
+
   val impwithhw =
     matchBidfloor(bid, activeCampaigns)
-      .map(x => matchBannerSize(x, banners))
+      .map(x => matchBannerSize(x, activeCampaigns.banners))
       .filter(impp => impp.isDefined)
 
+  println(matchBidfloor(bid, activeCampaigns))
   println(impwithhw)
 
   println(activeCampaigns.bid)
@@ -199,5 +236,38 @@ object Server extends App {
     activeCampaigns.targeting.targetedSiteIds
       .contains("0006a522ce0f4bbbbaa6b3c38cafaa0f")
   )
+
+  //Main
+  //Validate bidFloor
+  val validImpression = matchBidfloor(bid, activeCampaigns)
+  //Validate Country and Validate SiteId
+  if (validImpression.nonEmpty &&
+      matchCountry(bid, activeCampaigns) &&
+      matchSiteId(bid.site, activeCampaigns.targeting)) {
+
+  // Validate Width and Height
+    val validImpressionFinal =
+      validImpression
+        .map(impression => matchBannerSize(impression, activeCampaigns.banners))
+        .filter(imp => imp.isDefined)
+    println(validImpressionFinal)
+  //Choose Random Impression
+    if (validImpressionFinal.nonEmpty) {
+
+      val random = new Random
+      val chosenImpression = validImpressionFinal(
+        random.nextInt(validImpressionFinal.length)
+      ).get
+  //Build response.
+      val response = BidResponse(
+        id = randomUUID().toString(),
+        bidRequestId = chosenImpression.id,
+        price = chosenImpression.price,
+        adid = Option(activeCampaigns.id.toString()),
+        banner = Option(chosenImpression.banner)
+      )
+      println(response)
+    }
+  }
 
 }
