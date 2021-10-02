@@ -98,19 +98,26 @@ object Server extends App {
 
   val banners = activeCampaigns.banners
 
-  def matchBidfloor(
-      bidRequset: BidRequest,
-      campaign: Campaign
-  ): List[Impression] = {
-    val impressionList = bidRequset.imp.get
+  def matchSiteId(site: Site, targeting: Targeting) : Boolean ={
+   site match {
+     case Site(id,_) if (targeting.targetedSiteIds.contains(site.id)) => true
+     case Site(_,domain) if (targeting.domain == site.domain) => true
+     case _ => false
+   }
+  } 
+
+  println(matchSiteId(bid.site, activeCampaigns.targeting))
+
+  def matchBidfloor(bidRequst: BidRequest, campaign: Campaign): List[Impression] = {
+    val impressionList = bidRequst.imp.get
     return for (impression <- impressionList
                 if campaign.bid >= impression.bidFloor.get) yield impression
   }
 
   println(matchBidfloor(bid, activeCampaigns))
 
-  def matchCountry(bidRequset: BidRequest, campaign: Campaign): Boolean = {
-    bidRequset match {
+  def matchCountry(bidRequst: BidRequest, campaign: Campaign): Boolean = {
+    bidRequst match {
       case BidRequest(_, _, _, _, device)
           if (device.isDefined && device.get.geo.get.country.get == campaign.country) => {
         true
@@ -123,32 +130,23 @@ object Server extends App {
     }
   }
 
-  def heightMatch(
-      imp: Impression,
-      banner: List[Banner]
-  ): Option[ImpressionMatch] = {
+  def heightMatch(imp: Impression,banner: List[Banner]): Option[ImpressionMatch] = {
     imp match {
       case Impression(_, _, _, _, _, _, h, _)
-          if (imp.h.isDefined && banner
-            .filter(bn => imp.h.getOrElse(0) == bn.height)
-            .nonEmpty) => {
+          if (imp.h.isDefined && banner.exists(bn => imp.h.getOrElse(0) == bn.height)) => {
         val validBanners = banner.filter(bn => imp.h.getOrElse(0) == bn.height)
         Option(ImpressionMatch(Option(bid.id), Option(validBanners)))
       }
 
       case Impression(_, _, _, _, hmin, _, _, _)
-          if (imp.hmin.isDefined && banner
-            .filter(bn => imp.hmin.getOrElse(0) == bn.height)
-            .nonEmpty) => {
+          if (imp.hmin.isDefined && banner.exists(bn => imp.hmin.getOrElse(0) == bn.height)) => {
         val validBanners =
           banner.filter(bn => imp.hmin.getOrElse(0) == bn.height)
         Option(ImpressionMatch(Option(bid.id), Option(validBanners)))
       }
 
       case Impression(_, _, _, _, _, hmax, _, _)
-          if (imp.hmax.isDefined && banner
-            .filter(bn => imp.hmax.getOrElse(0) == bn.height)
-            .nonEmpty) => {
+          if (imp.hmax.isDefined && banner.exists(bn => imp.hmax.getOrElse(0) == bn.height)) => {
         val validBanners =
           banner.filter(bn => imp.hmax.getOrElse(0) == bn.height)
         Option(ImpressionMatch(Option(bid.id), Option(validBanners)))
@@ -157,15 +155,10 @@ object Server extends App {
     }
   }
 
-  def matchBannerSize(
-      imp: Impression,
-      banner: List[Banner]
-  ): Option[ImpressionMatch] = {
+  def matchBannerSize(imp: Impression, banner: List[Banner]): Option[ImpressionMatch] = {
     imp match {
       case Impression(_, _, _, w, _, _, _, _)
-          if (imp.w.isDefined && banner
-            .filter(bn => imp.w.getOrElse(0) == bn.width)
-            .nonEmpty) => {
+          if (imp.w.isDefined && banner.exists(bn => imp.w.getOrElse(0) == bn.width)) => {
         val validBanners_w =
           banner.filter(bn => imp.w.getOrElse(0) == bn.width)
         println("hapa width")
@@ -173,9 +166,7 @@ object Server extends App {
 
       }
       case Impression(_, wmin, _, _, _, _, _, _)
-          if (imp.wmin.isDefined && banner
-            .filter(bn => imp.wmin.getOrElse(0) == bn.width)
-            .nonEmpty) => {
+          if (imp.wmin.isDefined && banner.exists(bn => imp.wmin.getOrElse(0) == bn.width)) => {
         val validBanners_wmin =
           banner.filter(bn => imp.wmin.getOrElse(0) == bn.width)
         println("hapa wmin")
@@ -183,9 +174,7 @@ object Server extends App {
 
       }
       case Impression(_, _, wmax, _, _, _, _, _)
-          if (imp.wmax.isDefined && banner
-            .filter(bn => imp.wmax.getOrElse(0) == bn.width)
-            .nonEmpty) => {
+          if (imp.wmax.isDefined && banner.exists(bn => imp.wmax.getOrElse(0) == bn.width)) => {
         val validBanners_wmax =
           banner.filter(bn => imp.wmax.getOrElse(0) == bn.width)
         println("hapa wmax")
