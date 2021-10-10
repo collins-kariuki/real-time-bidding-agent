@@ -2,66 +2,19 @@ import scala.util.Random
 import java.util.UUID.randomUUID
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import spray.json.DefaultJsonProtocol
-
-case class Campaign(
-    id: Int,
-    country: String,
-    targeting: Targeting,
-    banners: List[Banner],
-    bid: Double
-)
-case class Targeting(targetedSiteIds: Set[String], domain: String)
-case class Banner(id: Int, src: String, width: Int, height: Int)
-
-case class BidRequest(
-    id: String,
-    imp: Option[List[Impression]],
-    site: Site,
-    user: Option[User],
-    device: Option[Device]
-)
-
-case class Impression(
-    id: String,
-    wmin: Option[Int],
-    wmax: Option[Int],
-    w: Option[Int],
-    hmin: Option[Int],
-    hmax: Option[Int],
-    h: Option[Int],
-    bidFloor: Option[Double]
-)
-case class Site(id: String, domain: String)
-case class User(id: String, geo: Option[Geo])
-case class Device(id: String, geo: Option[Geo])
-case class Geo(country: Option[String])
-
-case class BidResponse(
-    id: String,
-    bidRequestId: String,
-    price: Double,
-    adid: Option[String],
-    banner: Option[Banner]
-)
-
-object myJsonsupport extends DefaultJsonProtocol {
-  implicit val bannerFormat = jsonFormat4(Banner)
-  implicit val responseFormat = jsonFormat5(BidResponse)
-  implicit val geoFormat = jsonFormat1(Geo)
-  implicit val deviceFormat = jsonFormat2(Device)
-  implicit val userFormat = jsonFormat2(User)
-  implicit val siteFormat = jsonFormat2(Site)
-  implicit val impressionFormat = jsonFormat8(Impression)
-  implicit val bidRequstFormat = jsonFormat5(BidRequest)
-}
-
-import myJsonsupport._
 import spray.json._
 
-object Server2 extends App {
+object Server extends App {
   //Campaign protocol stores information about the advertising campaign
-
+  case class Campaign(
+      id: Int,
+      country: String,
+      targeting: Targeting,
+      banners: List[Banner],
+      bid: Double
+  )
+  case class Targeting(targetedSiteIds: Set[String], domain: String)
+  case class Banner(id: Int, src: String, width: Int, height: Int)
   //
   //
   val activeCampaigns =
@@ -87,6 +40,28 @@ object Server2 extends App {
   //
   //
   //Bid request protocol
+  case class BidRequest(
+      id: String,
+      imp: Option[List[Impression]],
+      site: Site,
+      user: Option[User],
+      device: Option[Device]
+  )
+
+  case class Impression(
+      id: String,
+      wmin: Option[Int],
+      wmax: Option[Int],
+      w: Option[Int],
+      hmin: Option[Int],
+      hmax: Option[Int],
+      h: Option[Int],
+      bidFloor: Option[Double]
+  )
+  case class Site(id: String, domain: String)
+  case class User(id: String, geo: Option[Geo])
+  case class Device(id: String, geo: Option[Geo])
+  case class Geo(country: Option[String])
 
   val bid = BidRequest(
     id = "SGu1Jpq1IO",
@@ -123,6 +98,14 @@ object Server2 extends App {
         geo = Option(Geo(country = Option("LT")))
       )
     )
+  )
+
+  case class BidResponse(
+      id: String,
+      bidRequestId: String,
+      price: Double,
+      adid: Option[String],
+      banner: Option[Banner]
   )
 
   def matchSiteId(site: Site, targeting: Targeting): Boolean = {
@@ -265,69 +248,29 @@ object Server2 extends App {
       matchCountry(bid, activeCampaigns) &&
       matchSiteId(bid.site, activeCampaigns.targeting)) {
 
-    // Validate Width and Height
+  // Validate Width and Height
     val validImpressionFinal =
       validImpression
         .map(impression => matchBannerSize(impression, activeCampaigns.banners))
         .filter(imp => imp.isDefined)
     println(validImpressionFinal)
-    //Choose Random Impression
+  //Choose Random Impression
     if (validImpressionFinal.nonEmpty) {
 
       val random = new Random
       val chosenImpression = validImpressionFinal(
         random.nextInt(validImpressionFinal.length)
       ).get
-      //Build response.
+  //Build response.
       val response = BidResponse(
         id = randomUUID().toString(),
         bidRequestId = chosenImpression.id,
         price = chosenImpression.price,
         adid = Option(activeCampaigns.id.toString()),
         banner = Option(chosenImpression.banner)
-      ).toJson
+      )
       println(response)
-
-      // val resp = response.convertTo[BidResponse]
-
-      // println(resp)
-
     }
   }
-  val bidJson = """{
-  "id": "SGu1Jpq1IO",
-  "site": {
-    "id": "0006a522ce0f4bbbbaa6b3c38cafaa0f",
-    "domain": "fake.tld"
-  },
-  "device": {
-    "id": "440579f4b408831516ebd02f6e1c31b4",
-    "geo": {
-      "country": "LT"
-    }
-  },
-  "imp": [
-    {
-      "id": "1",
-      "wmin": 50,
-      "wmax": 300,
-      "hmin": 100,
-      "hmax": 300,
-      "h": 250,
-      "w": 300,
-      "bidFloor": 3.12123
-    }
-  ],
-  "user": {
-    "geo": {
-      "country": "LT"
-    },
-    "id": "USARIO1"
-  }
-}"""
-  println(bidJson)
 
-  val bidconv = bidJson.parseJson.convertTo[BidRequest]
-
-  println(bidconv)
 }
