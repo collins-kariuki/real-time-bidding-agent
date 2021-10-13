@@ -119,7 +119,7 @@ object mine extends App {
   val bindingFuture = Http().newServerAt("localhost", 8080).bind(route)
 
   println(
-    s"\n\n\nServer now online. Send a POST Request to http://localhost:8080/bid  Payload = Bid request JSON \n\n\n"
+    s"\n\n\nServer now online. Send a POST Request to http://localhost:8080/bid  Payload = Bidrequest JSON \n\n\n"
   )
 
 }

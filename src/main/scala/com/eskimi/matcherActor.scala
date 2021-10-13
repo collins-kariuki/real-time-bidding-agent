@@ -176,7 +176,7 @@ object Matcher {
         message.replyTo ! ReceiveBidResponse(response, message.origin)
       }
     } else {
-
+      //Send No response if No match
       message.replyTo ! NoResponse("No match", message.origin)
     }
 
