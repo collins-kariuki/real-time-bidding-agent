@@ -13,8 +13,6 @@ import akka.actor.typed.ActorRef
 object Matcher {
 
   def apply(): Behavior[BidMatch] = Behaviors.receive { (context, message) =>
-    println(message.bidRequest)
-
     def matchSiteId(site: Site, targeting: Targeting): Boolean = {
       site match {
         case Site(id, _) if (targeting.targetedSiteIds.contains(site.id)) =>
@@ -117,7 +115,7 @@ object Matcher {
               .exists(bn => imp.w.getOrElse(0) == bn.width)) => {
           val validBanners_w =
             banner.filter(bn => imp.w.getOrElse(0) == bn.width)
-          println("hapa width")
+
           heightMatch(imp, validBanners_w)
 
         }
@@ -126,7 +124,7 @@ object Matcher {
               .exists(bn => imp.wmin.getOrElse(0) == bn.width)) => {
           val validBanners_wmin =
             banner.filter(bn => imp.wmin.getOrElse(0) == bn.width)
-          println("hapa wmin")
+
           heightMatch(imp, validBanners_wmin)
 
         }
@@ -135,7 +133,7 @@ object Matcher {
               .exists(bn => imp.wmax.getOrElse(0) == bn.width)) => {
           val validBanners_wmax =
             banner.filter(bn => imp.wmax.getOrElse(0) == bn.width)
-          println("hapa wmax")
+
           heightMatch(imp, validBanners_wmax)
 
         }
@@ -158,7 +156,7 @@ object Matcher {
             matchBannerSize(impression, message.campaign.banners)
           )
           .filter(imp => imp.isDefined)
-      println(validImpressionFinal)
+
       //Choose Random Impression
       if (validImpressionFinal.nonEmpty) {
 
@@ -174,9 +172,12 @@ object Matcher {
           adid = Option(message.campaign.id.toString()),
           banner = Option(chosenImpression.banner)
         )
-        println(response)
+
         message.replyTo ! ReceiveBidResponse(response, message.origin)
       }
+    } else {
+
+      message.replyTo ! NoResponse("No match", message.origin)
     }
 
     Behaviors.same

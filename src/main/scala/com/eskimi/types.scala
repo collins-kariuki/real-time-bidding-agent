@@ -33,7 +33,7 @@ case class BidResponse(
     price: Double,
     adid: Option[String],
     banner: Option[Banner]
-)
+) extends Messages
 
 case class Campaign(
     id: Int,
@@ -49,15 +49,20 @@ case class BidMatch(
     bidRequest: BidRequest,
     campaign: Campaign,
     replyTo: ActorRef[Messages],
-    origin: ActorRef[BidResponse]
+    origin: ActorRef[Messages]
 )
 
 case class ReceiveBidRequest(
     bidRequest: BidRequest,
-    replyTo: ActorRef[BidResponse]
+    replyTo: ActorRef[Messages]
 ) extends Messages
 
 case class ReceiveBidResponse(
     bidResponse: BidResponse,
-    replyTo: ActorRef[BidResponse]
+    replyTo: ActorRef[Messages]
+) extends Messages
+
+case class NoResponse(
+    message: String,
+    replyTo: ActorRef[Messages]
 ) extends Messages

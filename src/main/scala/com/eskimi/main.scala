@@ -40,7 +40,9 @@ import spray.json._
 object MainMatcher {
 
   def apply(): Behavior[Messages] = Behaviors.setup { context =>
-    val matcher = context.spawn(Matcher(), "asdfghj")
+    val matcher = context.spawn(Matcher(), "Matcher_actor")
+
+    var noMatchCount = 0
 
     Behaviors.receiveMessage(message =>
       message match {
@@ -56,12 +58,24 @@ object MainMatcher {
           )
 
           Behaviors.same
+        case NoResponse(_, _) => {
+          noMatchCount += 1
+          if (noMatchCount < data.activeCampaigns.length) {
+
+            Behaviors.same
+          } else {
+            message.asInstanceOf[NoResponse].replyTo ! message
+              .asInstanceOf[NoResponse]
+            Behaviors.same
+          }
+        }
         case ReceiveBidResponse(_, _) => {
-          // println("Send response" + message)
+          //Pass the response to Supervisor to send a 200
           message.asInstanceOf[ReceiveBidResponse].replyTo ! message
             .asInstanceOf[ReceiveBidResponse]
             .bidResponse
           Behaviors.same
+
         }
       }
     )
@@ -73,22 +87,30 @@ object MainMatcher {
 object mine extends App {
 
   val matchMain: ActorSystem[ReceiveBidRequest] =
-    ActorSystem(MainMatcher(), "12345678")
+    ActorSystem(MainMatcher(), "Supervisor")
 
-  implicit val system = ActorSystem(Behaviors.empty, "my-system")
+// Actor system for the HTTP server
+  implicit val system = ActorSystem(Behaviors.empty, "HTTP")
 
 // If ask takes more time than this to complete the request is failed
   private implicit val timeout = Timeout.create(
-    system.settings.config.getDuration("my-app.routes.ask-timeout")
+    system.settings.config.getDuration("bid-matcher.routes.ask-timeout")
   )
-  def matchBid(bidRequest: BidRequest): Future[BidResponse] =
+
+  def matchBid(bidRequest: BidRequest): Future[Messages] =
     matchMain.ask(ReceiveBidRequest(bidRequest, _))
 
   val route =
     path("bid") {
       post {
         entity(as[BidRequest]) { bidRequest =>
-          onSuccess(matchBid(bidRequest)) { response => complete(response) }
+          onSuccess(matchBid(bidRequest)) { response =>
+            response match {
+              case BidResponse(_, _, _, _, _) =>
+                complete(response.asInstanceOf[BidResponse])
+              case NoResponse(_, _) => complete(StatusCodes.NoContent)
+            }
+          }
         }
 
       }
@@ -97,7 +119,7 @@ object mine extends App {
   val bindingFuture = Http().newServerAt("localhost", 8080).bind(route)
 
   println(
-    s"\n\n\nServer now online. Please navigate to http://localhost:8080/bid....\n\n\n"
+    s"\n\n\nServer now online. Send a POST Request to http://localhost:8080/bid  Payload = Bid request JSON \n\n\n"
   )
 
 }
