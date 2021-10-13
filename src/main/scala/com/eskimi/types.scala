@@ -57,6 +57,7 @@ case class ReceiveBidRequest(
     replyTo: ActorRef[Messages]
 ) extends Messages
 
+// Custom
 case class ReceiveBidResponse(
     bidResponse: BidResponse,
     replyTo: ActorRef[Messages]
