@@ -7,19 +7,11 @@
 
 ---
 
-<p align="center"> Few lines describing your project.
-    <br> 
-</p>
-
 ## 📝 Table of Contents
 
 - [About](#about)
 - [Getting Started](#getting_started)
-- [Deployment](#deployment)
-- [Usage](#usage)
 - [Built Using](#built_using)
-- [TODO](../TODO.md)
-- [Contributing](../CONTRIBUTING.md)
 - [Authors](#authors)
 - [Acknowledgments](#acknowledgement)
 
@@ -35,10 +27,12 @@ Import Build Using eg. Metals on VScode
 
 Open a Terminal/CMD window on the root directory and run 'sbt run'
 
+Send a Post request using eg. (Postman or Curl) to the defined port using a BidRequest JSON pyload found in the data.scala file
+
 ### Prerequisites
 
-Scala > 2.13.1
-Sbt
+- Scala > 2.13.1
+- Sbt
 
 ## 🔧 Running the tests <a name = "tests"></a>
 
