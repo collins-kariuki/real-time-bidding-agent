@@ -49,7 +49,8 @@ object Matcher {
 
     def heightMatch(
         imp: Impression,
-        banner: List[Banner]
+        banner: List[Banner],
+        bid: BidRequest
     ): Option[ImpressionMatch] = {
       val random = new Random
       imp match {
@@ -62,7 +63,7 @@ object Matcher {
             validBanners(random.nextInt(validBanners.length))
           Option(
             ImpressionMatch(
-              message.bidRequest.id,
+              bid.id,
               randomImpression,
               imp.bidFloor.get
             )
@@ -79,7 +80,7 @@ object Matcher {
             validBanners(random.nextInt(validBanners.length))
           Option(
             ImpressionMatch(
-              message.bidRequest.id,
+              bid.id,
               randomImpression,
               imp.bidFloor.get
             )
@@ -95,7 +96,7 @@ object Matcher {
             validBanners(random.nextInt(validBanners.length))
           Option(
             ImpressionMatch(
-              message.bidRequest.id,
+              bid.id,
               randomImpression,
               imp.bidFloor.get
             )
@@ -107,7 +108,8 @@ object Matcher {
 
     def matchBannerSize(
         imp: Impression,
-        banner: List[Banner]
+        banner: List[Banner],
+        bid: BidRequest
     ): Option[ImpressionMatch] = {
       imp match {
         case Impression(_, _, _, w, _, _, _, _)
@@ -116,7 +118,7 @@ object Matcher {
           val validBanners_w =
             banner.filter(bn => imp.w.getOrElse(0) == bn.width)
 
-          heightMatch(imp, validBanners_w)
+          heightMatch(imp, validBanners_w, message.bidRequest)
 
         }
         case Impression(_, wmin, _, _, _, _, _, _)
@@ -125,7 +127,7 @@ object Matcher {
           val validBanners_wmin =
             banner.filter(bn => imp.wmin.getOrElse(0) == bn.width)
 
-          heightMatch(imp, validBanners_wmin)
+          heightMatch(imp, validBanners_wmin, message.bidRequest)
 
         }
         case Impression(_, _, wmax, _, _, _, _, _)
@@ -134,7 +136,7 @@ object Matcher {
           val validBanners_wmax =
             banner.filter(bn => imp.wmax.getOrElse(0) == bn.width)
 
-          heightMatch(imp, validBanners_wmax)
+          heightMatch(imp, validBanners_wmax, message.bidRequest)
 
         }
         case _ => None
@@ -153,7 +155,11 @@ object Matcher {
       val validImpressionFinal =
         validImpression
           .map(impression =>
-            matchBannerSize(impression, message.campaign.banners)
+            matchBannerSize(
+              impression,
+              message.campaign.banners,
+              message.bidRequest
+            )
           )
           .filter(imp => imp.isDefined)
 
@@ -174,9 +180,12 @@ object Matcher {
         )
 
         message.replyTo ! ReceiveBidResponse(response, message.origin)
+      } else {
+        //Send No response if No Banner match
+        message.replyTo ! NoResponse("No match", message.origin)
       }
     } else {
-      //Send No response if No match
+      //Send No response if No Bid floor, Country and site Id match
       message.replyTo ! NoResponse("No match", message.origin)
     }
 
