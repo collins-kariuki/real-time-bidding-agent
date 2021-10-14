@@ -1,4 +1,4 @@
-name := "akka-quickstart-scala"
+name := "Real-time-bidding-system"
 
 version := "1.0"
 
