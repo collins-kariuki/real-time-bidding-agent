@@ -1,6 +1,7 @@
-<p align="center" style="background-color:purple;">
-  <a href="" rel="noopener">
- <img width=200px height=200px src="https://global-uploads.webflow.com/60859154db955843c7fc06e7/6086e5b19dcb8d16f5451709_Eskimi.svg" alt="Project logo"></a>
+<div >
+<p align="center" style="background-color:purple;" >
+  <a href="" rel="noopener" >
+ <img  width=200px height=200px src="https://global-uploads.webflow.com/60859154db955843c7fc06e7/6086e5b19dcb8d16f5451709_Eskimi.svg" alt="Project logo"></a>
 </p>
 
 <h3 align="center">Real-time Bidding Agent</h3>
@@ -51,3 +52,5 @@ Open a Terminal/CMD window on the root directory and run 'sbt test'
 ## 🎉 Acknowledgements <a name = "acknowledgement"></a>
 
 - OpenRTB protocol.
+
+</div>
