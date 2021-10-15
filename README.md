@@ -1,4 +1,4 @@
-<p align="center">
+<p align="center" style="background-color:black;">
   <a href="" rel="noopener">
  <img width=200px height=200px src="https://global-uploads.webflow.com/60859154db955843c7fc06e7/6086e5b19dcb8d16f5451709_Eskimi.svg" alt="Project logo"></a>
 </p>
