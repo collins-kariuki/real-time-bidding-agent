@@ -36,7 +36,7 @@ Send a Post request using eg. (Postman or Curl) to the defined port using a BidR
 
 ## 🔧 Running the tests <a name = "tests"></a>
 
-Tests
+Open a Terminal/CMD window on the root directory and run 'sbt test'
 
 ## ⛏️ Built Using <a name = "built_using"></a>
 
