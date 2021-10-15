@@ -11,9 +11,7 @@ import java.util.UUID.randomUUID
 import akka.actor.typed.ActorRef
 
 object Matcher {
-
-  def apply(): Behavior[BidMatch] = Behaviors.receive { (context, message) =>
-    def matchSiteId(site: Site, targeting: Targeting): Boolean = {
+   def matchSiteId(site: Site, targeting: Targeting): Boolean = {
       site match {
         case Site(id, _) if (targeting.targetedSiteIds.contains(site.id)) =>
           true
@@ -21,7 +19,6 @@ object Matcher {
         case _                                                    => false
       }
     }
-
     def matchBidfloor(
         bidRequst: BidRequest,
         campaign: Campaign
@@ -118,7 +115,7 @@ object Matcher {
           val validBanners_w =
             banner.filter(bn => imp.w.getOrElse(0) == bn.width)
 
-          heightMatch(imp, validBanners_w, message.bidRequest)
+          heightMatch(imp, validBanners_w, bid)
 
         }
         case Impression(_, wmin, _, _, _, _, _, _)
@@ -127,7 +124,7 @@ object Matcher {
           val validBanners_wmin =
             banner.filter(bn => imp.wmin.getOrElse(0) == bn.width)
 
-          heightMatch(imp, validBanners_wmin, message.bidRequest)
+          heightMatch(imp, validBanners_wmin, bid)
 
         }
         case Impression(_, _, wmax, _, _, _, _, _)
@@ -136,12 +133,17 @@ object Matcher {
           val validBanners_wmax =
             banner.filter(bn => imp.wmax.getOrElse(0) == bn.width)
 
-          heightMatch(imp, validBanners_wmax, message.bidRequest)
+          heightMatch(imp, validBanners_wmax, bid)
 
         }
         case _ => None
       }
     }
+
+  def apply(): Behavior[BidMatch] = Behaviors.receive { (context, message) =>
+   
+
+    
 
     //Main
     //Validate bidFloor
